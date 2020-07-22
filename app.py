@@ -1,11 +1,11 @@
 import os
 
-from flask import Flask, render_template, request, flash, redirect, session, g
+from flask import Flask, render_template, request, flash, redirect, session, g, abort
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, UserEditForm, LoginForm, MessageForm
-from models import db, connect_db, User, Message
+from models import db, connect_db, User, Message, Likes
 
 CURR_USER_KEY = "curr_user"
 
@@ -115,6 +115,7 @@ def login():
 def logout():
     """Handle logout of user."""
     do_logout()
+    
     flash("Successfully logged out", 'success')
 
     return redirect('/login')
@@ -144,9 +145,7 @@ def list_users():
 @app.route('/users/<int:user_id>')
 def users_show(user_id):
     """Show user profile."""
-
     user = User.query.get_or_404(user_id)
-
     # snagging messages in order from the database;
     # user.messages won't be in order by default
     messages = (Message
@@ -156,6 +155,13 @@ def users_show(user_id):
                 .limit(100)
                 .all())
     return render_template('users/show.html', user=user, messages=messages)
+
+@app.route('/users/<int:user_id>/liked_messages')
+def show_liked_messages(user_id):
+    user = User.query.get_or_404(user_id)
+
+    return render_template("/users/show_messages.html",user=user)
+
 
 
 @app.route('/users/<int:user_id>/following')
@@ -229,7 +235,7 @@ def profile():
             g.user.header_image_url = form.header_image_url.data
             g.user.bio = form.bio.data
             
-            db.session.commit() #nts not sure how i can commit without adding
+            db.session.commit() #nts not sure how i can commit without adding g.user
             flash(f"Feedback Updated!", 'success')
             return redirect(f'/users/{g.user.id}')
         else:
@@ -237,6 +243,33 @@ def profile():
     
     return render_template("/users/edit.html", form = form)
     
+
+@app.route('/users/like/<int:msg_id>', methods=["POST"])
+def like_message(msg_id):
+    """Update profile for current user."""
+    if not g.user:
+        flash("Action unauthorized.", "danger")
+        return redirect("/")
+    #need to check if the message exists
+    liked_msg = Message.query.get_or_404(msg_id)
+    
+    #prevent user from liking their own message
+    if liked_msg.user_id == g.user.id:
+        return abort(403)
+
+    existing_likes = g.user.likes
+
+    if liked_msg in existing_likes:
+        g.user.likes.remove(liked_msg)
+    else:
+        g.user.likes.append(liked_msg)
+
+    # new_like = Likes(user_id=g.user.id, message_id=msg_id)
+    # db.session.add(new_like)
+    db.session.commit()
+    # this works to add a like. but am unable to get likes to appear
+    return redirect("/")
+
 
 @app.route('/users/delete', methods=["POST"])
 def delete_user():
@@ -321,8 +354,13 @@ def homepage():
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
+        # likes = db.session.query(Likes.message_id).filter(Likes.user_id==g.user.id)
+        # likes = g.user.likes # not sure why this wouldn't show up...
+        
+        liked_msgs = [msg.id for msg in g.user.likes]
+        user_id = g.user.id
 
-        return render_template('home.html', messages=messages)
+        return render_template('home.html', messages=messages, likes=liked_msgs, user_id=user_id)
 
     else:
         return render_template('home-anon.html')

@@ -44,8 +44,7 @@ class Likes(db.Model):
 
     message_id = db.Column(
         db.Integer,
-        db.ForeignKey('messages.id', ondelete='cascade'),
-        unique=True
+        db.ForeignKey('messages.id', ondelete='cascade')
     )
 
 
@@ -54,45 +53,21 @@ class User(db.Model):
 
     __tablename__ = 'users'
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True,
-    )
+    id = db.Column(        db.Integer,        primary_key=True    )
 
-    email = db.Column(
-        db.Text,
-        nullable=False,
-        unique=True,
-    )
+    email = db.Column(        db.Text,        nullable=False,        unique=True    )
 
-    username = db.Column(
-        db.Text,
-        nullable=False,
-        unique=True,
-    )
+    username = db.Column(        db.Text,        nullable=False,        unique=True    )
 
-    image_url = db.Column(
-        db.Text,
-        default="/static/images/default-pic.png",
-    )
+    image_url = db.Column(        db.Text,        default="/static/images/default-pic.png"    )
 
-    header_image_url = db.Column(
-        db.Text,
-        default="/static/images/warbler-hero.jpg"
-    )
+    header_image_url = db.Column(        db.Text,        default="/static/images/warbler-hero.jpg"    )
 
-    bio = db.Column(
-        db.Text,
-    )
+    bio = db.Column(db.Text)
 
-    location = db.Column(
-        db.Text,
-    )
+    location =  db.Column(db.Text)
 
-    password = db.Column(
-        db.Text,
-        nullable=False,
-    )
+    password =  db.Column(db.Text, nullable=False    )
 
     messages = db.relationship('Message')
 
