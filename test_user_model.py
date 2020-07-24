@@ -79,10 +79,35 @@ class UserModelTestCase(TestCase):
         # User should have no messages & no followers
         self.assertEqual(len(u.messages), 0)
         self.assertEqual(len(u.followers), 0)
+        self.assertEqual(u.image_url,"/static/images/default-pic.png")
+        self.assertEqual(u.header_image_url,"/static/images/warbler-hero.jpg")
+        
         # self.assertIn("testuser",u.__repr__ )
     
-    def test_user_model_following(self):
-        follows_test = Follows(user_being_followed_id= 111, user_following_id=222)
-        self.assertTrue(user1.is_followed_by(user2))
-        self.assertFalse(user2.is_followed_by(user1))
+    def test_user_following(self):
+        # follows_test = Follows(user_being_followed_id= 111, user_following_id=222)
+        # self.assertTrue(user1.is_followed_by(user2))
+        # self.assertFalse(user2.is_followed_by(user1))
+        self.u1.following.append(self.u2)
+        db.session.commit()
+
+        self.assertEqual(len(self.u2.following),0)
+        self.assertEqual(len(self.u2.followers),1)
+        self.assertEqual(len(self.u1.following),1)
+        self.assertEqual(len(self.u1.followers),0)
+
+        self.assertEqual(self.u2.followers[0].id, self.u1.id)
+        self.assertEqual(self.u1.following[0].id, self.u2.id)
+       
+
+    # def test_user_authenticates(self):
+    #     u = User.authenticate(self.u1.username, "password")
+    #     self.assertIsNotNone(u)
+    #     self.assertEqual(u.id, self.uid1)
+    
+    # def test_invalid_username(self):
+    #     self.assertFalse(User.authenticate("badusername", "password"))
+
+    # def test_wrong_password(self):
+    #     self.assertFalse(User.authenticate(self.u1.username, "badpassword"))
         
