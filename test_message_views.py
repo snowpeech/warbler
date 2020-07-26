@@ -96,6 +96,25 @@ class MessageViewTestCase(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn('<p class="single-message">test message</p>', html)
     
-    # def test_delete_message(self):
-    #     """Test delete message"""
+    def test_delete_message(self):
+        """Test delete message"""
+        m = Message(
+            id=222,
+            text="test message",
+            user_id=self.testuser.id
+        )
         
+        db.session.add(m)
+        db.session.commit()
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+
+            resp = c.post("/messages/222/delete")
+            
+            self.assertEqual(resp.status_code, 302)
+
+            msg = Message.query.filter_by(id=222).one_or_none()
+            self.assertIsNone(msg)
+    
