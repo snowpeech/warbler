@@ -1,24 +1,10 @@
 """Message View tests."""
-
-# run these tests like:
-#
-#    FLASK_ENV=production python -m unittest test_message_views.py
-
-
 import os
 from unittest import TestCase
 
 from models import db, connect_db, Message, User
 
-# BEFORE we import our app, let's set an environmental variable
-# to use a different database for tests (we need to do this
-# before we import our app, since that will have already
-# connected to the database
-
-os.environ['DATABASE_URL'] = "postgresql:///warbler-test"
-
-
-# Now we can import app
+os.environ['DATABASE_URL'] = "postgresql:///warbler_test"
 
 from app import app, CURR_USER_KEY
 
@@ -45,17 +31,22 @@ class MessageViewTestCase(TestCase):
         self.client = app.test_client()
 
         self.testuser = User.signup(username="testuser",
-                                    email="test@test.com",
-                                    password="testuser",
-                                    image_url=None)
+        email="test@test.com",
+        password="testuser",
+        image_url=None)
 
+        self.testuser.id=1234
+
+        
         db.session.commit()
 
-    def test_add_message(self):
-        """Can use add a message?"""
+    def tearDown(self):
+        db.session.rollback()
 
-        # Since we need to change the session to mimic logging in,
-        # we need to use the changing-session trick:
+    def test_add_message(self):
+        """Can user add a message?"""
+
+        # Since we need to change the session to mimic logging in, we need to use the changing-session trick:
 
         with self.client as c:
             with c.session_transaction() as sess:
@@ -71,3 +62,40 @@ class MessageViewTestCase(TestCase):
 
             msg = Message.query.one()
             self.assertEqual(msg.text, "Hello")
+
+    def test_add_message_page(self):
+        """Does the add message page render"""
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+
+            resp = c.get("/messages/new")
+            html = resp.get_data(as_text=True)
+            
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<textarea class="form-control" id="text" name="text" ', html)
+    
+    def test_show_message_page(self):
+        """Does the show message page render"""
+        m = Message(
+            id=111,
+            text="test message",
+            user_id=self.testuser.id
+        )
+        
+        db.session.add(m)
+        db.session.commit()
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+
+            resp = c.get("/messages/111")
+            html = resp.get_data(as_text=True)
+            
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<p class="single-message">test message</p>', html)
+    
+    # def test_delete_message(self):
+    #     """Test delete message"""
+        

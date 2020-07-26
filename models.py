@@ -108,7 +108,6 @@ class User(db.Model):
     @classmethod
     def signup(cls, username, email, password, image_url):
         """Sign up user.
-
         Hashes password and adds user to system.
         """
 

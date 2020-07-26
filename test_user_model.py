@@ -49,10 +49,7 @@ class UserModelTestCase(TestCase):
 
     #having u1 and u2 available on self makes it easier to test
         self.u1 = u1
-        self.uid1 = uid1
-
         self.u2 = u2
-        self.uid2 = uid2
         
         self.client = app.test_client()
     
@@ -81,33 +78,40 @@ class UserModelTestCase(TestCase):
         self.assertEqual(len(u.followers), 0)
         self.assertEqual(u.image_url,"/static/images/default-pic.png")
         self.assertEqual(u.header_image_url,"/static/images/warbler-hero.jpg")
+        self.assertEqual(repr(u),f"<User #{u.id}: {u.username}, {u.email}>")
         
-        # self.assertIn("testuser",u.__repr__ )
-    
     def test_user_following(self):
-        # follows_test = Follows(user_being_followed_id= 111, user_following_id=222)
-        # self.assertTrue(user1.is_followed_by(user2))
-        # self.assertFalse(user2.is_followed_by(user1))
         self.u1.following.append(self.u2)
         db.session.commit()
 
         self.assertEqual(len(self.u2.following),0)
         self.assertEqual(len(self.u2.followers),1)
+        self.assertTrue(self.u2.is_followed_by(self.u1))
+        self.assertFalse(self.u2.is_following(self.u1))
+
         self.assertEqual(len(self.u1.following),1)
         self.assertEqual(len(self.u1.followers),0)
+        self.assertFalse(self.u1.is_followed_by(self.u2))
+        self.assertTrue(self.u1.is_following(self.u2))
 
         self.assertEqual(self.u2.followers[0].id, self.u1.id)
         self.assertEqual(self.u1.following[0].id, self.u2.id)
-       
+
+    def test_user_signup(self):
+        q = User.query.filter_by(username="testname").first()
+        self.assertIsNone(q)
+        
+        u = User.signup(username="testname", email="test@test.com", password="test123",image_url="testurl")
+        
+        q = User.query.filter_by(username="testname").first()
+        self.assertIsNotNone(q)
 
     # def test_user_authenticates(self):
-    #     u = User.authenticate(self.u1.username, "password")
-    #     self.assertIsNotNone(u)
-    #     self.assertEqual(u.id, self.uid1)
-    
-    # def test_invalid_username(self):
-    #     self.assertFalse(User.authenticate("badusername", "password"))
+    #     a = User.authenticate(self.u1.username,"user123")
+    #     self.assertIsNotNone(a)
+    #   # invalid salt error. Not sure how to test this. Will return
 
-    # def test_wrong_password(self):
-    #     self.assertFalse(User.authenticate(self.u1.username, "badpassword"))
+    
+        
+    
         
