@@ -163,7 +163,6 @@ def show_liked_messages(user_id):
     return render_template("/users/show_messages.html",user=user)
 
 
-
 @app.route('/users/<int:user_id>/following')
 def show_following(user_id):
     """Show list of people this user is following."""
@@ -246,7 +245,7 @@ def profile():
 
 @app.route('/users/like/<int:msg_id>', methods=["POST"])
 def like_message(msg_id):
-    """Update profile for current user."""
+    """Like/Unlike message for current user."""
     if not g.user:
         flash("Action unauthorized.", "danger")
         return redirect("/")
